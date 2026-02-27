@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Italian Flashcards</title>
+  <meta name="description" content="Flashcards for Italian → English vocabulary" />
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#0d6efd" />
+  <!-- iOS add to home screen support -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="app-header">
+    <h1>Italian Flashcards</h1>
+    <button id="btn-settings" aria-label="Settings" title="Settings">⚙️</button>
+  </header>
+
+  <main class="container">
+    <section class="stats">
+      <div><strong id="stat-index">1</strong>/<span id="stat-total">0</span></div>
+      <div>Known: <strong id="stat-known">0</strong> • Learning: <strong id="stat-learning">0</strong></div>
+    </section>
+
+    <section class="card" id="card" tabindex="0" aria-live="polite" aria-label="Flashcard">
+      <div class="lang it" id="text-it">ciao</div>
+      <div class="lang en hidden" id="text-en">hello</div>
+    </section>
+
+    <section class="controls">
+      <button id="btn-reveal" class="primary">Reveal</button>
+      <button id="btn-next">Next</button>
+    </section>
+
+    <section class="actions-row">
+      <button id="btn-mark-known" class="success">I knew this ✓</button>
+      <button id="btn-shuffle" class="secondary">Shuffle 🔀</button>
+    </section>
+  </main>
+
+  <dialog id="settings-modal">
+    <form method="dialog">
+      <h2>Settings</h2>
+      <label class="row">
+        <span>Shuffle on start</span>
+        <input type="checkbox" id="opt-shuffle-on-start" />
+      </label>
+      <label class="row">
+        <span>Show English first</span>
+        <input type="checkbox" id="opt-en-first" />
+      </label>
+      <label class="row">
+        <span>Reset progress</span>
+        <button id="btn-reset" type="button">Reset</button>
+      </label>
+      <menu>
+        <button value="cancel">Close</button>
+      </menu>
+    </form>
+  </dialog>
+
+  <footer class="footer">
+    <small>Works offline. Add to Home Screen on iPhone: Share → Add to Home Screen.</small>
+  </footer>
+
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js');
+      });
+    }
+  </script>
+  <script src="app.js"></script>
+</body>
+</html>
