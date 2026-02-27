@@ -66,13 +66,16 @@
     <small>Works offline. Add to Home Screen on iPhone: Share → Add to Home Screen.</small>
   </footer>
 
-  <script>
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js');
-      });
-    }
-  </script>
-  <script src="app-phrases.js"></script>
+ <!-- Load the 1000-phrase dataset first -->
+<script src="./app_phrases.js?v=4"></script>
+
+<!-- Then load the app logic that uses FLASHCARDS -->
+<script src="./app.js?v=4"></script>
+
+<script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js?v=4');
+  }
+</script>
 </body>
 </html>
