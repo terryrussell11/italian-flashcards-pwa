@@ -1,26 +1,4 @@
 // Flashcard data: add/edit here
-const FLASHCARDS = [
-  { it: 'ciao', en: 'hello' },
-  { it: 'grazie', en: 'thank you' },
-  { it: 'per favore', en: 'please' },
-  { it: 'buongiorno', en: 'good morning' },
-  { it: 'arrivederci', en: 'goodbye' },
-  { it: 'acqua', en: 'water' },
-  { it: 'pane', en: 'bread' },
-  { it: 'vino', en: 'wine' },
-  { it: 'dove', en: 'where' },
-  { it: 'quando', en: 'when' },
-  { it: 'quanto costa?', en: 'how much does it cost?' },
-  { it: 'mi scusi', en: 'excuse me' },
-  { it: 'mi chiamo…', en: 'my name is…' },
-  { it: 'piacere', en: 'nice to meet you' },
-  { it: 'bagno', en: 'bathroom' },
-  { it: 'stazione', en: 'station' },
-  { it: 'sinistra', en: 'left' },
-  { it: 'destra', en: 'right' },
-  { it: 'oggi', en: 'today' },
-  { it: 'domani', en: 'tomorrow' },
-];
 
 // State
 let index = 0;
