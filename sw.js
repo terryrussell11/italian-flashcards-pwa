@@ -1,4 +1,4 @@
-const CACHE_NAME = 'it-flashcards-v21';
+const CACHE_NAME = 'it-flashcards-v22';
 const FILES = [
   './',
   './index.html',
@@ -24,7 +24,5 @@ self.addEventListener('activate', (e) => {
 });
 
 self.addEventListener('fetch', (e) => {
-  e.respondWith(
-    caches.match(e.request).then(r => r || fetch(e.request))
-  );
+  e.respondWith(caches.match(e.request).then(r => r || fetch(e.request)));
 });
