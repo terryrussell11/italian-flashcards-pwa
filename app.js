@@ -29,18 +29,20 @@
     injectDataset(startFn);
   }
 
-  function injectDataset(startFn) {
-    const s = document.createElement('script');
-    // bump the query to beat caches if needed
-    s.src = './app_phrases.js?v=10';
-    s.async = false; // load & execute in order
-    s.onload = () => {
-      console.log('Injected dataset size:', window.FLASHCARDS && window.FLASHCARDS.length);
-      startFn();
-    };
-    s.onerror = () => console.error('Failed to load app_phrases.js');
-    document.head.appendChild(s);
-  }
+ function injectDataset(startFn) {
+  const s = document.createElement('script');
+  s.src = './app_phrases.js?v=' + Date.now(); // hard bust any cache
+  s.async = false;
+  s.onload = () => {
+    console.log('Injected dataset size:', window.FLASHCARDS && window.FLASHCARDS.length);
+    startFn();
+  };
+  s.onerror = (e) => {
+    console.error('Failed to load app_phrases.js', e);
+    alert('Could not download the phrase list file. Please try again.');
+  };
+  document.head.appendChild(s);
+}
 
   // ---- your original app logic, wrapped in startApp() ----
   function startApp() {
