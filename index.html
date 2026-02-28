@@ -66,18 +66,12 @@
     <small>Works offline. Add to Home Screen on iPhone: Share → Add to Home Screen.</small>
   </footer>
 
-<!-- Load the 1000-phrase dataset FIRST -->
-<script src="./app_phrases.js?v=11"></script>
-
-<!-- Then load the app logic that uses FLASHCARDS -->
-<script src="./app.js?v=11"></script>
-
+<!-- Only the app logic; it will inject the dataset with a cache-busting query -->
+<script src="./app.js?v=21"></script>
 <script>
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('./sw.js?v=17');
+    navigator.serviceWorker.register('./sw.js?v=21');
   }
 </script>
-</body>
-</html>
 </body>
 </html>
