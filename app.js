@@ -56,3 +56,198 @@
     const okPhrases = [
       ["Va bene per me","Works for me"], ["Non sono sicuro","I'm not sure"],
       ["Penso di sì","I think so"], ["Penso di no","I don't think so"],
+      ["Sono d'accordo","I agree"], ["Non sono d'accordo","I disagree"],
+      ["Forse","Maybe"], ["Vediamo","Let's see"]
+    ];
+
+    // Time modifiers (aligned IT/EN)
+    const genTimes = ["oggi","domani","dopodomani","stasera","domani mattina","domani pomeriggio"];
+    const genTimesEn = ["today","tomorrow","the day after tomorrow","this evening","tomorrow morning","tomorrow afternoon"];
+
+    // Generator bases (verbs, objects, places)
+    const genVerbs = [
+      ["prenotare", "book"], ["comprare", "buy"], ["trovare", "find"], ["noleggiare", "rent"],
+      ["visitare", "visit"], ["chiamare", "call"], ["prendere", "get"], ["cambiare", "change"]
+    ];
+
+    const genObjectsIt = [
+      "un tavolo","un taxi","una camera","un biglietto","una guida","una visita","una lezione",
+      "una SIM","un adattatore","una mappa","una prenotazione","una ricevuta","una fattura",
+      "del pane","dell'acqua","del vino","dei francobolli","un regalo","dei biglietti","un posto"
+    ];
+    const genObjectsEn = [
+      "a table","a taxi","a room","a ticket","a guide","a tour","a lesson",
+      "a SIM card","an adapter","a map","a reservation","a receipt","an invoice",
+      "some bread","some water","some wine","some stamps","a gift","some tickets","a seat/place"
+    ];
+
+    const genPlacesIt = [
+      "a Roma","a Milano","in centro","all'aeroporto","in stazione","in hotel",
+      "al museo","al ristorante","alla spiaggia","in farmacia"
+    ];
+    const genPlacesEn = [
+      "in Rome","in Milan","in the city center","at the airport","at the station","at the hotel",
+      "at the museum","at the restaurant","at the beach","at the pharmacy"
+    ];
+
+    // Sanity checks (won’t stop UI; just logs if off)
+    if (genObjectsIt.length !== genObjectsEn.length)
+      console.warn('Object arrays length mismatch:', genObjectsIt.length, genObjectsEn.length);
+    if (genTimes.length !== genTimesEn.length)
+      console.warn('Time arrays length mismatch:', genTimes.length, genTimesEn.length);
+    if (genPlacesIt.length !== genPlacesEn.length)
+      console.warn('Place arrays length mismatch:', genPlacesIt.length, genPlacesEn.length);
+
+    // Generate many unique combos and stop at 1000
+    outer:
+    for (const [vIt, vEn] of genVerbs) {
+      for (let oi = 0; oi < genObjectsIt.length; oi++) {
+        const objIt = genObjectsIt[oi], objEn = genObjectsEn[oi];
+        for (let pi = 0; pi < genPlacesIt.length; pi++) {
+          const itPlace = genPlacesIt[pi], enPlace = genPlacesEn[pi];
+          for (let ti = 0; ti < genTimes.length; ti++) {
+            if (out.length >= 1000) break outer;
+            const whenIt = genTimes[ti], whenEn = genTimesEn[ti];
+            add(
+              `Vorrei ${vIt} ${objIt} ${whenIt} ${itPlace}`,
+              `I'd like to ${vEn} ${objEn} ${whenEn} ${enPlace}`
+            );
+          }
+        }
+      }
+    }
+
+    // If still <1000 (unlikely), top up with hedges + time mods
+    const timeMods = ["adesso","più tardi","stasera","domani","questa settimana","questo weekend"];
+    for (let i = 0; out.length < 1000 && i < 5000; i++) {
+      const [itBase, enBase] = okPhrases[i % okPhrases.length];
+      const mod = timeMods[i % timeMods.length];
+      add(`${itBase}, ${mod}`, `${enBase}, ${mod}`);
+    }
+
+    return out;
+  }
+
+  // Build once & export globally
+  window.FLASHCARDS = buildDataset();
+  console.log('Dataset built in app.js, length =', window.FLASHCARDS.length);
+
+  // ----------------------------
+  // 2) UI logic (unchanged), starts after dataset exists
+  // ----------------------------
+  function startApp() {
+    if (!Array.isArray(window.FLASHCARDS) || window.FLASHCARDS.length === 0) {
+      alert('The phrase list failed to load. Reload the page.');
+      return;
+    }
+
+    let index = 0;
+    let showEnglish = false;
+
+    let known = new Set(JSON.parse(localStorage.getItem("known") || "[]"));
+    let learning = new Set(JSON.parse(localStorage.getItem("learning") || "[]"));
+
+    const elIt = document.getElementById("text-it");
+    const elEn = document.getElementById("text-en");
+    const card = document.getElementById("card");
+
+    const btnReveal = document.getElementById("btn-reveal");
+    const btnNext = document.getElementById("btn-next");
+    const btnKnown = document.getElementById("btn-mark-known");
+    const btnShuffle = document.getElementById("btn-shuffle");
+
+    const statIndex = document.getElementById("stat-index");
+    const statTotal = document.getElementById("stat-total");
+    const statKnown = document.getElementById("stat-known");
+    const statLearning = document.getElementById("stat-learning");
+
+    const modal = document.getElementById("settings-modal");
+    const btnSettings = document.getElementById("btn-settings");
+    const btnReset = document.getElementById("btn-reset");
+    const optShuffleOnStart = document.getElementById("opt-shuffle-on-start");
+    const optEnFirst = document.getElementById("opt-en-first");
+
+    statTotal.textContent = window.FLASHCARDS.length;
+
+    // Preferences
+    const prefs = JSON.parse(localStorage.getItem("prefs") || "{}");
+    optShuffleOnStart.checked = !!prefs.shuffleOnStart;
+    optEnFirst.checked = !!prefs.enFirst;
+
+    if (optShuffleOnStart.checked) shuffleArray(window.FLASHCARDS);
+    showEnglish = optEnFirst.checked;
+
+    renderCard();
+
+    // Behavior
+    btnReveal.onclick = () => { showEnglish = true; renderCard(); };
+    btnNext.onclick = () => {
+      index = (index + 1) % window.FLASHCARDS.length;
+      learning.add(index);
+      persist();
+      showEnglish = optEnFirst.checked;
+      renderCard();
+    };
+    btnKnown.onclick = () => {
+      known.add(index); learning.delete(index);
+      persist(); renderCard();
+    };
+    btnShuffle.onclick = () => {
+      shuffleArray(window.FLASHCARDS); index = 0; renderCard();
+    };
+    card.onclick = () => { showEnglish = !showEnglish; renderCard(); };
+
+    btnSettings.onclick = () => modal.showModal();
+    btnReset.onclick = () => {
+      known.clear(); learning.clear();
+      localStorage.removeItem("known");
+      localStorage.removeItem("learning");
+      renderCard();
+    };
+
+    optShuffleOnStart.onchange = savePrefs;
+    optEnFirst.onchange = () => { savePrefs(); showEnglish = optEnFirst.checked; renderCard(); };
+
+    // Helpers
+    function renderCard() {
+      const c = window.FLASHCARDS[index];
+      elIt.textContent = c.it;
+      elEn.textContent = c.en;
+
+      statIndex.textContent = index + 1;
+      statKnown.textContent = known.size;
+      statLearning.textContent = learning.size;
+
+      if (showEnglish) {
+        elIt.classList.add("hidden");
+        elEn.classList.remove("hidden");
+      } else {
+        elIt.classList.remove("hidden");
+        elEn.classList.add("hidden");
+      }
+    }
+    function shuffleArray(arr) {
+      for (let i = arr.length - 1; i > 0; i++) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+    }
+    function persist() {
+      localStorage.setItem("known", JSON.stringify([...known]));
+      localStorage.setItem("learning", JSON.stringify([...learning]));
+    }
+    function savePrefs() {
+      localStorage.setItem("prefs", JSON.stringify({
+        shuffleOnStart: optShuffleOnStart.checked,
+        enFirst: optEnFirst.checked,
+      }));
+    }
+  }
+
+  // Start immediately (dataset already exists)
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', startApp);
+  } else {
+    startApp();
+  }
+})();
