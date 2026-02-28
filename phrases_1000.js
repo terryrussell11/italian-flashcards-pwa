@@ -1,4 +1,4 @@
-/* phrases_1000.js — compact build: generates exactly 1000 phrases */
+/* phrases_1000.js — generates exactly 1000 phrases with aligned EN translations */
 (function () {
   console.log('phrases_1000.js: start');
 
@@ -56,33 +56,22 @@
     ["Sono d'accordo","I agree"], ["Non sono d'accordo","I disagree"],
     ["Forse","Maybe"], ["Vediamo","Let's see"]
   ];
-  const timeMods = ["adesso","più tardi","stasera","domani","questa settimana","questo weekend"];
 
-  // --- Generator to reach exactly 1000 ---
-  const genVerbs = [["prenotare","book"],["comprare","buy"],["trovare","find"],["noleggiare","rent"],["visitare","visit"],["chiamare","call"],["prendere","get"],["cambiare","change"]];
-  const genObjectsIt = ["un tavolo","un taxi","una camera","un biglietto","una guida","una visita","una lezione","una SIM","un adattatore","una mappa","una prenotazione","una ricevuta","una fattura","del pane","dell'acqua","del vino","dei francobolli","un regalo","dei biglietti","un posto"];
+  // --- Time modifiers (IT + EN aligned) ---
   const genTimes = ["oggi","domani","dopodomani","stasera","domani mattina","domani pomeriggio"];
-  const genPlacesIt = ["a Roma","a Milano","in centro","all'aeroporto","in stazione","in hotel","al museo","al ristorante","alla spiaggia","in farmacia"];
-  const genPlacesEn = ["in Rome","in Milan","in the city center","at the airport","at the station","at the hotel","at the museum","at the restaurant","at the beach","at the pharmacy"];
+  const genTimesEn = ["today","tomorrow","the day after tomorrow","this evening","tomorrow morning","tomorrow afternoon"];
 
-  outer:
-  for (const [vIt, vEn] of genVerbs) {
-    for (const objIt of genObjectsIt) {
-      for (let i = 0; i < genPlacesIt.length; i++) {
-        const itPlace = genPlacesIt[i], enPlace = genPlacesEn[i];
-        for (const when of genTimes) {
-          if (out.length >= 1000) break outer;
-          add(`Vorrei ${vIt} ${objIt} ${when} ${itPlace}`, `I'd like to ${vEn} ${objIt} ${when} ${enPlace}`);
-        }
-      }
-    }
-  }
-  for (let i = 0; out.length < 1000 && i < 5000; i++) {
-    const [itBase, enBase] = okPhrases[i % okPhrases.length];
-    const mod = timeMods[i % timeMods.length];
-    add(`${itBase}, ${mod}`, `${enBase}, ${mod}`);
-  }
+  // --- Generator bases (verbs, objects, places) ---
+  const genVerbs = [
+    ["prenotare", "book"], ["comprare", "buy"], ["trovare", "find"], ["noleggiare", "rent"],
+    ["visitare", "visit"], ["chiamare", "call"], ["prendere", "get"], ["cambiare", "change"]
+  ];
 
-  console.log('phrases_1000.js: end, out.length =', out.length);
-  window.FLASHCARDS = out;
-})();
+  const genObjectsIt = [
+    "un tavolo","un taxi","una camera","un biglietto","una guida","una visita","una lezione",
+    "una SIM","un adattatore","una mappa","una prenotazione","una ricevuta","una fattura",
+    "del pane","dell'acqua","del vino","dei francobolli","un regalo","dei biglietti","un posto"
+  ];
+  // NEW: 1:1 English counterparts (same index as Italian)
+  const genObjectsEn = [
+    "a table","a taxi","a room","a ticket","a guide","a tour","a lesson",
