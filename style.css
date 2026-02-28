@@ -41,3 +41,14 @@ button:active { transform: translateY(1px); }
 #settings-modal { color: #0b1220; }
 #settings-modal form { min-width: 280px; }
 #settings-modal .row { display: flex; align-items: center; justify-content: space-between; margin: 10px 0; }
+/* The card needs a positioning context for the floating button */
+.card { position: relative; }
+
+/* Floating audio button in the card’s top-right corner */
+.speak-btn {
+  position: absolute; top: 12px; right: 12px;
+  background: #152646; color: #fff;
+  border: 1px solid #2a4069; border-radius: 10px;
+  padding: 8px 10px; font-weight: 600; cursor: pointer;
+}
+.speak-btn:disabled { opacity: .5; cursor: not-allowed; }
