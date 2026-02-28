@@ -1,88 +1,145 @@
-/* app_phrases.js — compact build: generates exactly 1000 phrases */
+// app.js — minimal, deterministic bootstrap that always waits for the dataset.
 (function () {
-  console.log('app_phrases.js: start');
+  function loadDatasetThenStart(startFn) {
+    // If already present (e.g., from a previous load), start immediately.
+    if (Array.isArray(window.FLASHCARDS) && window.FLASHCARDS.length > 0) {
+      console.log('Dataset present:', window.FLASHCARDS.length);
+      startFn();
+      return;
+    }
+    // Inject with a cache-busting query to avoid any stale SW/CDN copies.
+    const s = document.createElement('script');
+    s.src = './app_phrases.js?v=' + Date.now();
+    s.async = false;
+    s.onload = () => {
+      console.log('Dataset loaded. length =', window.FLASHCARDS && window.FLASHCARDS.length);
+      if (Array.isArray(window.FLASHCARDS) && window.FLASHCARDS.length > 0) {
+        startFn();
+      } else {
+        alert('The phrase list loaded but was empty. Try reloading the page.');
+      }
+    };
+    s.onerror = (e) => {
+      console.error('Failed to load app_phrases.js', e);
+      alert('Could not download the phrase list file. Please try again.');
+    };
+    document.head.appendChild(s);
+  }
 
-  const out = [];
-  const seen = new Set();
-  const add = (it, en) => {
-    it = (it || '').trim(); en = (en || '').trim();
-    if (!it || !en) return;
-    const k = it + '||' + en;
-    if (!seen.has(k)) { seen.add(k); out.push({ it, en }); }
-  };
+  function startApp() {
+    // Guard
+    if (!Array.isArray(window.FLASHCARDS) || window.FLASHCARDS.length === 0) {
+      alert('The phrase list failed to load. Reload the page.');
+      return;
+    }
 
-  // --- Core starters ---
-  [
-    ["Ciao!", "Hi!"], ["Buongiorno", "Good morning"], ["Buonasera", "Good evening"], ["Buonanotte", "Good night"],
-    ["Come stai?", "How are you?"], ["Come va?", "How's it going?"], ["Sto bene, grazie", "I'm fine, thank you"],
-    ["E tu?", "And you?"], ["Piacere di conoscerti", "Nice to meet you"], ["Grazie", "Thank you"],
-    ["Grazie mille", "Thanks a lot"], ["Prego", "You're welcome"], ["Per favore", "Please"],
-    ["Mi scusi", "Excuse me (formal)"], ["Scusa", "Excuse me / Sorry (informal)"], ["Mi dispiace", "I'm sorry"],
-    ["Nessun problema", "No problem"], ["Di niente", "Don't mention it"], ["Parli inglese?", "Do you speak English?"],
-    ["Non capisco", "I don't understand"], ["Capisco", "I understand"], ["Quanto costa?", "How much is it?"],
-    ["Dov'è il bagno?", "Where is the bathroom?"], ["Il conto, per favore", "The bill, please"],
-    ["Che ore sono?", "What time is it?"], ["A dopo", "See you later"], ["A presto", "See you soon"],
-    ["A domani", "See you tomorrow"], ["Buona giornata", "Have a nice day"], ["Buon fine settimana", "Have a good weekend"]
-  ].forEach(([it, en]) => add(it, en));
+    let index = 0;
+    let showEnglish = false;
 
-  // --- Cities (tickets) ---
-  "Roma,Milano,Napoli,Torino,Firenze,Bologna,Venezia,Verona,Genova,Pisa,Palermo,Catania,Bari,Lecce,Como,Bergamo,Trento,Trieste,Perugia,Siena"
-    .split(",").forEach(c => add(`Un biglietto per ${c}, per favore`, `A ticket to ${c}, please`));
+    let known = new Set(JSON.parse(localStorage.getItem("known") || "[]"));
+    let learning = new Set(JSON.parse(localStorage.getItem("learning") || "[]"));
 
-  // --- Simple orders & shopping ---
-  [
-    ["Vorrei un caffè, per favore", "I'd like a coffee, please"],
-    ["Vorrei una birra, per favore", "I'd like a beer, please"],
-    ["Una bottiglia d'acqua, per favore", "A bottle of water, please"],
-    ["Posso pagare con carta?", "Can I pay by card?"],
-    ["Accettate carte di credito?", "Do you accept credit cards?"],
-    ["Posso provarlo?", "Can I try it on?"],
-    ["Dove sono i camerini?", "Where are the fitting rooms?"],
-    ["È troppo caro", "It's too expensive"], ["Ha uno sconto?", "Is there a discount?"]
-  ].forEach(([it, en]) => add(it, en));
+    const elIt = document.getElementById("text-it");
+    const elEn = document.getElementById("text-en");
+    const card = document.getElementById("card");
 
-  // --- Directions, time & weather ---
-  [["A destra","To the right"],["A sinistra","To the left"],["Dritto","Straight ahead"],["Vicino","Near"],["Lontano","Far"],["All'angolo","At the corner"],["Dietro","Behind"],["Davanti","In front"]]
-    .forEach(([it,en])=>add(it,en));
-  [["Che tempo fa oggi?","What's the weather like today?"],["Fa caldo","It's hot"],["Fa freddo","It's cold"],["C'è il sole","It's sunny"],["È nuvoloso","It's cloudy"],["Sta piovendo","It's raining"],["Tira vento","It's windy"]]
-    .forEach(([it,en])=>add(it,en));
-  [["A che ora apre?","What time does it open?"],["A che ora chiude?","What time does it close?"],["A che ora parte il treno?","What time does the train leave?"],["A che ora arriva l'autobus?","What time does the bus arrive?"],["È in ritardo","It's delayed"],["È in orario","It's on time"]]
-    .forEach(([it,en])=>add(it,en));
+    const btnReveal = document.getElementById("btn-reveal");
+    const btnNext = document.getElementById("btn-next");
+    const btnKnown = document.getElementById("btn-mark-known");
+    const btnShuffle = document.getElementById("btn-shuffle");
 
-  // --- Hedging phrases (for later top-up) ---
-  const okPhrases = [
-    ["Va bene per me","Works for me"], ["Non sono sicuro","I'm not sure"],
-    ["Penso di sì","I think so"], ["Penso di no","I don't think so"],
-    ["Sono d'accordo","I agree"], ["Non sono d'accordo","I disagree"],
-    ["Forse","Maybe"], ["Vediamo","Let's see"]
-  ];
-  const timeMods = ["adesso","più tardi","stasera","domani","questa settimana","questo weekend"];
+    const statIndex = document.getElementById("stat-index");
+    const statTotal = document.getElementById("stat-total");
+    const statKnown = document.getElementById("stat-known");
+    const statLearning = document.getElementById("stat-learning");
 
-  // --- Generator to reach exactly 1000 ---
-  const genVerbs = [["prenotare","book"],["comprare","buy"],["trovare","find"],["noleggiare","rent"],["visitare","visit"],["chiamare","call"],["prendere","get"],["cambiare","change"]];
-  const genObjectsIt = ["un tavolo","un taxi","una camera","un biglietto","una guida","una visita","una lezione","una SIM","un adattatore","una mappa","una prenotazione","una ricevuta","una fattura","del pane","dell'acqua","del vino","dei francobolli","un regalo","dei biglietti","un posto"];
-  const genTimes = ["oggi","domani","dopodomani","stasera","domani mattina","domani pomeriggio"];
-  const genPlacesIt = ["a Roma","a Milano","in centro","all'aeroporto","in stazione","in hotel","al museo","al ristorante","alla spiaggia","in farmacia"];
-  const genPlacesEn = ["in Rome","in Milan","in the city center","at the airport","at the station","at the hotel","at the museum","at the restaurant","at the beach","at the pharmacy"];
+    const modal = document.getElementById("settings-modal");
+    const btnSettings = document.getElementById("btn-settings");
+    const btnReset = document.getElementById("btn-reset");
+    const optShuffleOnStart = document.getElementById("opt-shuffle-on-start");
+    const optEnFirst = document.getElementById("opt-en-first");
 
-  outer:
-  for (const [vIt, vEn] of genVerbs) {
-    for (const objIt of genObjectsIt) {
-      for (let i = 0; i < genPlacesIt.length; i++) {
-        const itPlace = genPlacesIt[i], enPlace = genPlacesEn[i];
-        for (const when of genTimes) {
-          if (out.length >= 1000) break outer;
-          add(`Vorrei ${vIt} ${objIt} ${when} ${itPlace}`, `I'd like to ${vEn} ${objIt} ${when} ${enPlace}`);
-        }
+    statTotal.textContent = window.FLASHCARDS.length;
+
+    // Preferences
+    const prefs = JSON.parse(localStorage.getItem("prefs") || "{}");
+    optShuffleOnStart.checked = !!prefs.shuffleOnStart;
+    optEnFirst.checked = !!prefs.enFirst;
+
+    if (optShuffleOnStart.checked) shuffleArray(window.FLASHCARDS);
+    showEnglish = optEnFirst.checked;
+
+    renderCard();
+
+    // Behaviours
+    btnReveal.onclick = () => { showEnglish = true; renderCard(); };
+    btnNext.onclick = () => {
+      index = (index + 1) % window.FLASHCARDS.length;
+      learning.add(index);
+      persist();
+      showEnglish = optEnFirst.checked;
+      renderCard();
+    };
+    btnKnown.onclick = () => {
+      known.add(index); learning.delete(index);
+      persist(); renderCard();
+    };
+    btnShuffle.onclick = () => {
+      shuffleArray(window.FLASHCARDS); index = 0; renderCard();
+    };
+    card.onclick = () => { showEnglish = !showEnglish; renderCard(); };
+
+    btnSettings.onclick = () => modal.showModal();
+    btnReset.onclick = () => {
+      known.clear(); learning.clear();
+      localStorage.removeItem("known");
+      localStorage.removeItem("learning");
+      renderCard();
+    };
+
+    optShuffleOnStart.onchange = savePrefs;
+    optEnFirst.onchange = () => { savePrefs(); showEnglish = optEnFirst.checked; renderCard(); };
+
+    // Helpers
+    function renderCard() {
+      const c = window.FLASHCARDS[index];
+      elIt.textContent = c.it;
+      elEn.textContent = c.en;
+
+      statIndex.textContent = index + 1;
+      statKnown.textContent = known.size;
+      statLearning.textContent = learning.size;
+
+      if (showEnglish) {
+        elIt.classList.add("hidden");
+        elEn.classList.remove("hidden");
+      } else {
+        elIt.classList.remove("hidden");
+        elEn.classList.add("hidden");
       }
     }
-  }
-  for (let i = 0; out.length < 1000 && i < 5000; i++) {
-    const [itBase, enBase] = okPhrases[i % okPhrases.length];
-    const mod = timeMods[i % timeMods.length];
-    add(`${itBase}, ${mod}`, `${enBase}, ${mod}`);
+    function shuffleArray(arr) {
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+    }
+    function persist() {
+      localStorage.setItem("known", JSON.stringify([...known]));
+      localStorage.setItem("learning", JSON.stringify([...learning]));
+    }
+    function savePrefs() {
+      localStorage.setItem("prefs", JSON.stringify({
+        shuffleOnStart: optShuffleOnStart.checked,
+        enFirst: optEnFirst.checked,
+      }));
+    }
   }
 
-  console.log('app_phrases.js: end, out.length =', out.length);
-  window.FLASHCARDS = out;
+  // Start after DOM is ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => loadDatasetThenStart(startApp));
+  } else {
+    loadDatasetThenStart(startApp);
+  }
 })();
