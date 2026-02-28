@@ -611,4 +611,3 @@ console.log('app_phrases.js: start');
   // -------------------------
 console.log('app_phrases.js: end, out.length =', Array.isArray(out) ? out.length : '(no out)');
   window.FLASHCARDS = out;
-})();
