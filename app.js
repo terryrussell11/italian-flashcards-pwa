@@ -1,4 +1,4 @@
-// app.js — self-contained build: constructs 1000 phrases, then starts the UI.
+// app.js — self-contained dataset + robust UI with guards
 (function () {
   // ----------------------------
   // 1) Build dataset (Italian -> English), then export to window.FLASHCARDS
@@ -90,7 +90,7 @@
       "at the museum","at the restaurant","at the beach","at the pharmacy"
     ];
 
-    // Sanity checks (won’t stop UI; just logs if off)
+    // Sanity logs (just in case)
     if (genObjectsIt.length !== genObjectsEn.length)
       console.warn('Object arrays length mismatch:', genObjectsIt.length, genObjectsEn.length);
     if (genTimes.length !== genTimesEn.length)
@@ -124,7 +124,6 @@
       const mod = timeMods[i % timeMods.length];
       add(`${itBase}, ${mod}`, `${enBase}, ${mod}`);
     }
-
     return out;
   }
 
@@ -133,14 +132,10 @@
   console.log('Dataset built in app.js, length =', window.FLASHCARDS.length);
 
   // ----------------------------
-  // 2) UI logic (unchanged), starts after dataset exists
+  // 2) UI logic (with strong guards)
   // ----------------------------
   function startApp() {
-    if (!Array.isArray(window.FLASHCARDS) || window.FLASHCARDS.length === 0) {
-      alert('The phrase list failed to load. Reload the page.');
-      return;
-    }
-
+    const getCards = () => Array.isArray(window.FLASHCARDS) ? window.FLASHCARDS : [];
     let index = 0;
     let showEnglish = false;
 
@@ -167,56 +162,90 @@
     const optShuffleOnStart = document.getElementById("opt-shuffle-on-start");
     const optEnFirst = document.getElementById("opt-en-first");
 
-    statTotal.textContent = window.FLASHCARDS.length;
-
     // Preferences
     const prefs = JSON.parse(localStorage.getItem("prefs") || "{}");
     optShuffleOnStart.checked = !!prefs.shuffleOnStart;
     optEnFirst.checked = !!prefs.enFirst;
 
-    if (optShuffleOnStart.checked) shuffleArray(window.FLASHCARDS);
+    // Shuffle on start (if chosen)
+    if (optShuffleOnStart.checked) shuffleArraySafe(window.FLASHCARDS);
     showEnglish = optEnFirst.checked;
 
-    renderCard();
+    // Init totals
+    statTotal.textContent = String(getCards().length);
 
-    // Behavior
-    btnReveal.onclick = () => { showEnglish = true; renderCard(); };
+    // ---------- Actions ----------
+    btnReveal.onclick = () => { showEnglish = true; renderCardSafe(); };
+
     btnNext.onclick = () => {
-      index = (index + 1) % window.FLASHCARDS.length;
+      const cards = getCards();
+      if (cards.length === 0) return;
+      index = (index + 1) % cards.length;
       learning.add(index);
       persist();
       showEnglish = optEnFirst.checked;
-      renderCard();
+      renderCardSafe();
     };
+
     btnKnown.onclick = () => {
+      const cards = getCards();
+      if (cards.length === 0) return;
       known.add(index); learning.delete(index);
-      persist(); renderCard();
+      persist(); renderCardSafe();
     };
+
     btnShuffle.onclick = () => {
-      shuffleArray(window.FLASHCARDS); index = 0; renderCard();
+      shuffleArraySafe(window.FLASHCARDS);
+      index = 0; showEnglish = optEnFirst.checked;
+      renderCardSafe();
     };
-    card.onclick = () => { showEnglish = !showEnglish; renderCard(); };
 
     btnSettings.onclick = () => modal.showModal();
+
     btnReset.onclick = () => {
-      known.clear(); learning.clear();
+      known.clear();
+      learning.clear();
       localStorage.removeItem("known");
       localStorage.removeItem("learning");
-      renderCard();
+      renderCardSafe();
     };
 
     optShuffleOnStart.onchange = savePrefs;
-    optEnFirst.onchange = () => { savePrefs(); showEnglish = optEnFirst.checked; renderCard(); };
+    optEnFirst.onchange = () => { savePrefs(); showEnglish = optEnFirst.checked; renderCardSafe(); };
 
-    // Helpers
-    function renderCard() {
-      const c = window.FLASHCARDS[index];
-      elIt.textContent = c.it;
-      elEn.textContent = c.en;
+    // ---------- Helpers ----------
+    function renderCardSafe() {
+      const cards = getCards();
+      const len = cards.length;
 
-      statIndex.textContent = index + 1;
+      // Update stats regardless
       statKnown.textContent = known.size;
       statLearning.textContent = learning.size;
+      statTotal.textContent = String(len);
+
+      if (len === 0) {
+        elIt.textContent = "(no cards)";
+        elEn.textContent = "";
+        elEn.classList.add("hidden");
+        elIt.classList.remove("hidden");
+        statIndex.textContent = "0";
+        return;
+      }
+
+      // Clamp index
+      if (index < 0) index = 0;
+      if (index >= len) index = 0;
+
+      const c = cards[index];
+      if (!c || typeof c.it !== "string" || typeof c.en !== "string") {
+        // Skip broken entries defensively
+        index = (index + 1) % len;
+        return renderCardSafe();
+      }
+
+      elIt.textContent = c.it;
+      elEn.textContent = c.en;
+      statIndex.textContent = String(index + 1);
 
       if (showEnglish) {
         elIt.classList.add("hidden");
@@ -226,25 +255,32 @@
         elEn.classList.add("hidden");
       }
     }
-    function shuffleArray(arr) {
-      for (let i = arr.length - 1; i > 0; i++) {
+
+    function shuffleArraySafe(arr) {
+      if (!Array.isArray(arr) || arr.length < 2) return;
+      for (let i = arr.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [arr[i], arr[j]] = [arr[j], arr[i]];
       }
     }
+
     function persist() {
       localStorage.setItem("known", JSON.stringify([...known]));
       localStorage.setItem("learning", JSON.stringify([...learning]));
     }
+
     function savePrefs() {
       localStorage.setItem("prefs", JSON.stringify({
         shuffleOnStart: optShuffleOnStart.checked,
         enFirst: optEnFirst.checked,
       }));
     }
+
+    // First render
+    renderCardSafe();
   }
 
-  // Start immediately (dataset already exists)
+  // Start after DOM is ready
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', startApp);
   } else {
