@@ -130,7 +130,41 @@
   // Build once & export globally
   window.FLASHCARDS = buildDataset();
   console.log('Dataset built in app.js, length =', window.FLASHCARDS.length);
+// ---- TTS (Italian only) ----
+let itVoice = null;
 
+// Try to pick an Italian voice when available (iOS loads voices async)
+function pickItalianVoice() {
+  if (!('speechSynthesis' in window)) return;
+  const voices = window.speechSynthesis.getVoices() || [];
+  // Prefer explicit it-IT; otherwise any 'it'
+  itVoice = voices.find(v => v.lang && v.lang.toLowerCase() === 'it-it')
+         || voices.find(v => v.lang && v.lang.toLowerCase().startsWith('it'));
+}
+if ('speechSynthesis' in window) {
+  // First attempt (in case voices are already loaded)
+  pickItalianVoice();
+  // And update once the voice list finishes loading (Safari/iOS does this lazily)
+  window.speechSynthesis.onvoiceschanged = pickItalianVoice;
+}
+
+function speakItalian(text) {
+  if (!('speechSynthesis' in window)) {
+    alert('Speech synthesis is not supported on this device/browser.');
+    return;
+  }
+  if (!text) return;
+  // Stop any ongoing speech
+  window.speechSynthesis.cancel();
+
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = 'it-IT';
+  if (itVoice) u.voice = itVoice;
+  // Optional: tweak for clarity
+  u.rate = 0.95;
+  u.pitch = 1.0;
+  window.speechSynthesis.speak(u);
+}
   // ----------------------------
   // 2) UI logic (with strong guards)
   // ----------------------------
@@ -199,7 +233,18 @@
       index = 0; showEnglish = optEnFirst.checked;
       renderCardSafe();
     };
+// Play the current Italian phrase
+btnAudio.onclick = () => {
+  const cards = getCards();
+  if (cards.length === 0) return;
+  const c = cards[index];
+  speakItalian(c.it);
+};
 
+// Optional keyboard shortcut: press "A" to play audio
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'a' || e.key === 'A') btnAudio.click();
+});
     btnSettings.onclick = () => modal.showModal();
 
     btnReset.onclick = () => {
