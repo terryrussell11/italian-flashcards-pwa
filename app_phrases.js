@@ -1,3 +1,4 @@
+console.log('app_phrases.js: start');
 /* app_phrases.js — Italian Flashcards (1000 phrases)
    This script builds the global array `window.FLASHCARDS`.
    Include it BEFORE app.js in index.html.
@@ -608,5 +609,6 @@
   // -------------------------
   // Final export
   // -------------------------
+console.log('app_phrases.js: end, out.length =', Array.isArray(out) ? out.length : '(no out)');
   window.FLASHCARDS = out;
 })();
