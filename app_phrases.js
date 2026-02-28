@@ -597,7 +597,7 @@ console.log('app_phrases.js: start');
 // -------------------------
 // 47. Top‑up to exactly 1000 items (robust, natural combos)
 // -------------------------
-// This block generates many unique, natural phrases by combining verbs, objects,
+// Generates many unique, natural phrases by combining verbs, objects,
 // places, and times. It stops as soon as we reach 1000 items.
 
 const genVerbs = [
@@ -640,20 +640,8 @@ for (const [vIt, vEn] of genVerbs) {
   }
 }
 
-// Safety: if we somehow still haven't reached 1000, add short hedges with modifiers
-const okPhrases = [
-  ["Va bene per me","Works for me"],
-  ["Non sono sicuro","I'm not sure"],
-  ["Penso di sì","I think so"],
-  ["Penso di no","I don't think so"],
-  ["Sono d'accordo","I agree"],
-  ["Non sono d'accordo","I disagree"],
-  ["Forse","Maybe"],
-  ["Vediamo","Let's see"]
-];
-const timeMods = ["adesso","più tardi","stasera","domani","questa settimana","questo weekend"];
-
-for (let i = 0; out.length < 1000 && i < 2000; i++) {
+// If somehow still < 1000 (unlikely), top up using Section 46 arrays:
+for (let i = 0; out.length < 1000 && i < 5000; i++) {
   const [itBase, enBase] = okPhrases[i % okPhrases.length];
   const mod = timeMods[i % timeMods.length];
   add(`${itBase}, ${mod}`, `${enBase}, ${mod}`);
