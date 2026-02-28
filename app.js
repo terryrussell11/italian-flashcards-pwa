@@ -9,7 +9,7 @@
     }
     // Inject with a cache-busting query to avoid any stale SW/CDN copies.
     const s = document.createElement('script');
-    s.src = './app_phrases.js?v=' + Date.now();
+   s.src = './phrases_1000.js?v=' + Date.now();
     s.async = false;
     s.onload = () => {
       console.log('Dataset loaded. length =', window.FLASHCARDS && window.FLASHCARDS.length);
