@@ -577,23 +577,21 @@ console.log('app_phrases.js: start');
   const seek = ["un bancomat","una farmacia","un supermercato","una stazione di servizio","un'edicola","un supermercato aperto","una banca","un'agenzia di viaggi","un'uscita"];
   seek.forEach(s => { add(`Mi serve ${s}`, `I need ${s}`); add(`Sto cercando ${s}`, `I'm looking for ${s}`); });
 
-  // -------------------------
-  // 46. Affirmations & hedges with time modifiers
-  // (used later to top up to 1000 if needed)
-  // -------------------------
-  const okPhrases = [
-    ["Va bene per me","Works for me"],
-    ["Non sono sicuro","I'm not sure"],
-    ["Penso di sì","I think so"],
-    ["Penso di no","I don't think so"],
-    ["Sono d'accordo","I agree"],
-    ["Non sono d'accordo","I disagree"],
-    ["Forse","Maybe"],
-    ["Vediamo","Let's see"]
-  ];
-  const timeMods = ["adesso","più tardi","stasera","domani","questa settimana","questo weekend"];
+// -------------------------
+// 46. Affirmations & hedges with time modifiers
+// -------------------------
+const okPhrases = [
+  ["Va bene per me","Works for me"],
+  ["Non sono sicuro","I'm not sure"],
+  ["Penso di sì","I think so"],
+  ["Penso di no","I don't think so"],
+  ["Sono d'accordo","I agree"],
+  ["Non sono d'accordo","I disagree"],
+  ["Forse","Maybe"],
+  ["Vediamo","Let's see"]
+];
+const timeMods = ["adesso","più tardi","stasera","domani","questa settimana","questo weekend"];
 
-  // NOTE: We will add the final top-up to 1000 and close the IIFE in the last part.
 // -------------------------
 // 47. Top‑up to exactly 1000 items (robust, natural combos)
 // -------------------------
@@ -619,8 +617,14 @@ const genObjectsIt = [
 
 const genTimes = ["oggi","domani","dopodomani","stasera","domani mattina","domani pomeriggio"];
 
-const genPlacesIt = ["a Roma","a Milano","in centro","all'aeroporto","in stazione","in hotel","al museo","al ristorante","alla spiaggia","in farmacia"];
-const genPlacesEn = ["in Rome","in Milan","in the city center","at the airport","at the station","at the hotel","at the museum","at the restaurant","at the beach","at the pharmacy"];
+const genPlacesIt = [
+  "a Roma","a Milano","in centro","all'aeroporto","in stazione","in hotel",
+  "al museo","al ristorante","alla spiaggia","in farmacia"
+];
+const genPlacesEn = [
+  "in Rome","in Milan","in the city center","at the airport","at the station","at the hotel",
+  "at the museum","at the restaurant","at the beach","at the pharmacy"
+];
 
 // Create lots of unique combos, but stop at 1000
 outer:
@@ -646,6 +650,10 @@ for (let i = 0; out.length < 1000 && i < 5000; i++) {
   const mod = timeMods[i % timeMods.length];
   add(`${itBase}, ${mod}`, `${enBase}, ${mod}`);
 }
+
+// -------------------------
+// Final export
+// -------------------------
 console.log('app_phrases.js: end, out.length =', Array.isArray(out) ? out.length : '(no out)');
 window.FLASHCARDS = out;
 })();
