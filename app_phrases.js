@@ -660,3 +660,4 @@ for (let i = 0; out.length < 1000 && i < 2000; i++) {
 }
 console.log('app_phrases.js: end, out.length =', Array.isArray(out) ? out.length : '(no out)');
 window.FLASHCARDS = out;
+})();
